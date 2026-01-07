@@ -1,3 +1,2 @@
-// const unused = 123
-// console.log("this will fail")
-// THIS SHOULD PASS EVERYTHING
+const unused = 123
+console.log("this will fail")
