@@ -1,10 +1,11 @@
 name: Demo Workflow
 
-on: [push]
+on:
+  push:
 
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      -uses: actions/checkout@v4
-      -runs: echo "Hello from personal GitHub Actions demo!"
+      - uses: actions/checkout@v4
+      - run: echo "Hello from personal GitHub Actions demo!"
