@@ -7,3 +7,4 @@ describe("Smoke test suite", () => {
     expect(false).toBe(true); // <-- This will also fail
   });
 });
+// now it should work
