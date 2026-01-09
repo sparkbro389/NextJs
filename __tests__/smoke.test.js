@@ -1,10 +1,9 @@
 describe("Smoke test suite", () => {
   test("true is true", () => {
-    expect(true).toBe(false); // <-- This will fail
+    expect(true).toBe(true);
   });
 
   test("false is false", () => {
-    expect(false).toBe(true); // <-- This will also fail
+    expect(false).toBe(false);
   });
 });
-// now it should work

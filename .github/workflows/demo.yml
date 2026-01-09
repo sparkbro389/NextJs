@@ -6,9 +6,24 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel older runs of the same branch / PR
 concurrency:
   group: demo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+env:
+  # Detect [skip ci]
+  SKIP_CI: >-
+    ${{
+      github.event_name == 'push' &&
+      contains(github.event.head_commit.message, '[skip ci]')
+      ||
+      github.event_name == 'pull_request' &&
+      (
+        contains(github.event.pull_request.title, '[skip ci]') ||
+        contains(github.event.pull_request.body || '', '[skip ci]')
+      )
+    }}
 
 jobs:
   lint:
@@ -16,71 +31,56 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Detect skip ci
-        id: skip
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "skip=${{ contains(github.event.head_commit.message, '[skip ci]') }}" >> $GITHUB_OUTPUT
-          else
-            echo "skip=${{ contains(github.event.pull_request.title, '[skip ci]') || contains(github.event.pull_request.body || '', '[skip ci]') }}" >> $GITHUB_OUTPUT
-          fi
+      # Always run at least one step so the job reports SUCCESS
+      - name: CI skipped notice
+        if: env.SKIP_CI == 'true'
+        run: echo "✅ Lint skipped due to [skip ci]"
 
       - name: Checkout code
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         run: npm ci
 
       - name: Run ESLint
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         run: npx eslint app/lint-demo
-
-      - name: Skip lint (success)
-        if: steps.skip.outputs.skip == 'true'
-        run: echo "Skipping lint due to [skip ci]"
 
   tests:
     name: tests
     runs-on: ubuntu-latest
+    needs: lint
 
     steps:
-      - name: Detect skip ci
-        id: skip
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            echo "skip=${{ contains(github.event.head_commit.message, '[skip ci]') }}" >> $GITHUB_OUTPUT
-          else
-            echo "skip=${{ contains(github.event.pull_request.title, '[skip ci]') || contains(github.event.pull_request.body || '', '[skip ci]') }}" >> $GITHUB_OUTPUT
-          fi
+      # Always run at least one step so the job reports SUCCESS
+      - name: CI skipped notice
+        if: env.SKIP_CI == 'true'
+        run: echo "✅ Tests skipped due to [skip ci]"
 
       - name: Checkout code
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         run: npm ci
 
       - name: Run tests
-        if: steps.skip.outputs.skip != 'true'
+        if: env.SKIP_CI != 'true'
         run: npm test
-
-      - name: Skip tests (success)
-        if: steps.skip.outputs.skip == 'true'
-        run: echo "Skipping tests due to [skip ci]"
