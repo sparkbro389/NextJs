@@ -6,10 +6,23 @@ on:
   pull_request:
     branches: [main]
 
+# Optional: cancel older runs of same branch/PR
+concurrency:
+  group: demo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
+    if: |
+      !(
+        (github.event_name == 'push' && contains(github.event.head_commit.message, '[skip ci]')) ||
+        (github.event_name == 'pull_request' && (
+          contains(github.event.pull_request.title, '[skip ci]') ||
+          contains(github.event.pull_request.body || '', '[skip ci]')
+        ))
+      )
 
     steps:
       - name: Checkout code
@@ -30,6 +43,14 @@ jobs:
   tests:
     name: tests
     runs-on: ubuntu-latest
+    if: |
+      !(
+        (github.event_name == 'push' && contains(github.event.head_commit.message, '[skip ci]')) ||
+        (github.event_name == 'pull_request' && (
+          contains(github.event.pull_request.title, '[skip ci]') ||
+          contains(github.event.pull_request.body || '', '[skip ci]')
+        ))
+      )
 
     steps:
       - name: Checkout code
