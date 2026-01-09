@@ -6,81 +6,43 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel older runs of the same branch / PR
-concurrency:
-  group: demo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
-env:
-  # Detect [skip ci]
-  SKIP_CI: >-
-    ${{
-      github.event_name == 'push' &&
-      contains(github.event.head_commit.message, '[skip ci]')
-      ||
-      github.event_name == 'pull_request' &&
-      (
-        contains(github.event.pull_request.title, '[skip ci]') ||
-        contains(github.event.pull_request.body || '', '[skip ci]')
-      )
-    }}
-
 jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
 
     steps:
-      # Always run at least one step so the job reports SUCCESS
-      - name: CI skipped notice
-        if: env.SKIP_CI == 'true'
-        run: echo "✅ Lint skipped due to [skip ci]"
-
       - name: Checkout code
-        if: env.SKIP_CI != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        if: env.SKIP_CI != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
-        if: env.SKIP_CI != 'true'
         run: npm ci
 
-      - name: Run ESLint
-        if: env.SKIP_CI != 'true'
+      - name: Run ESLint (lint-demo only)
         run: npx eslint app/lint-demo
 
   tests:
     name: tests
     runs-on: ubuntu-latest
-    needs: lint
 
     steps:
-      # Always run at least one step so the job reports SUCCESS
-      - name: CI skipped notice
-        if: env.SKIP_CI == 'true'
-        run: echo "✅ Tests skipped due to [skip ci]"
-
       - name: Checkout code
-        if: env.SKIP_CI != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
-        if: env.SKIP_CI != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
-        if: env.SKIP_CI != 'true'
         run: npm ci
 
       - name: Run tests
-        if: env.SKIP_CI != 'true'
         run: npm test
